@@ -1,1185 +1,774 @@
 <!DOCTYPE html>
-
 <html lang="zh-CN">
 <head>
-<meta charset="utf-8"/>
-<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
-<title>HOME家庭 - 我们的温馨港湾</title>
-<script src="https://cdn.tailwindcss.com"></script>
-<link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet"/>
-<script>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PhotoBook - 极简照片整理工具</title>
+  <script src="https://cdn.tailwindcss.com"></script>
+  <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+  <script>
     tailwind.config = {
       theme: {
         extend: {
           colors: {
-            primary: '#D2691E', // 温暖的橙棕色主色调
-            secondary: '#FFD700', // 金色辅助色
-            accent: '#8B4513', // 深棕色强调色
-            neutral: '#FFF8DC', // 米白色背景
+            primary: '#165DFF',
+            secondary: '#36D399',
+            neutral: '#F9FAFB',
+            dark: '#1F2937'
           },
           fontFamily: {
-            sans: ['Inter', 'system-ui', 'sans-serif'],
-            display: ['"Ma Shan Zheng"', 'cursive'],
+            inter: ['Inter', 'sans-serif'],
           },
         },
       }
     }
   </script>
-<style type="text/tailwindcss">
+  <style type="text/tailwindcss">
     @layer utilities {
       .content-auto {
         content-visibility: auto;
       }
-      .text-shadow {
-        text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.2);
+      .scrollbar-hide {
+        -ms-overflow-style: none;
+        scrollbar-width: none;
       }
-      .card-hover {
-        @apply transition-all duration-300 hover:shadow-xl hover:-translate-y-1;
+      .scrollbar-hide::-webkit-scrollbar {
+        display: none;
       }
-      .section-padding {
-        @apply py-16 md:py-24;
+      .backdrop-blur {
+        backdrop-filter: blur(8px);
+      }
+      .photo-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(160px, 1fr));
+        gap: 1rem;
+      }
+      .photo-item {
+        aspect-ratio: 1;
+        overflow: hidden;
+        position: relative;
+        border-radius: 0.5rem;
+        transition: transform 0.2s, box-shadow 0.2s;
+      }
+      .photo-item:hover {
+        transform: translateY(-4px);
+        box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+      }
+      .photo-selected::after {
+        content: '';
+        position: absolute;
+        inset: 0;
+        background-color: rgba(22, 93, 255, 0.3);
+        border: 3px solid #165DFF;
+      }
+      .photo-selected .select-icon {
+        display: block;
+      }
+      .select-icon {
+        display: none;
+        position: absolute;
+        top: 0.5rem;
+        right: 0.5rem;
+        background-color: #165DFF;
+        color: white;
+        border-radius: 50%;
+        padding: 0.25rem;
+        font-size: 0.75rem;
+      }
+      .slide-in {
+        animation: slideIn 0.3s ease forwards;
+      }
+      .slide-out {
+        animation: slideOut 0.3s ease forwards;
+      }
+      @keyframes slideIn {
+        from { transform: translateX(100%); opacity: 0; }
+        to { transform: translateX(0); opacity: 1; }
+      }
+      @keyframes slideOut {
+        from { transform: translateX(0); opacity: 1; }
+        to { transform: translateX(100%); opacity: 0; }
       }
     }
   </style>
 </head>
-<body class="bg-neutral text-gray-800 min-h-screen flex flex-col">
-<!-- 导航栏 -->
-<header class="bg-primary/95 text-white sticky top-0 z-50 backdrop-blur-md shadow-md">
-<div class="container mx-auto px-4 py-3">
-<div class="flex justify-between items-center">
-<a class="flex items-center space-x-2" href="#">
-<i class="fa fa-home text-2xl"></i>
-<span class="text-xl font-bold">HOME家庭</span>
-</a>
-<!-- 桌面导航 -->
-<nav class="hidden md:flex space-x-8">
-<a class="hover:text-secondary transition-colors duration-300" href="#home">首页</a>
-<a class="hover:text-secondary transition-colors duration-300" href="#family">家庭成员</a>
-<a class="hover:text-secondary transition-colors duration-300" href="#gallery">家庭相册</a>
-<a class="hover:text-secondary transition-colors duration-300" href="#events">活动日历</a>
-<a class="hover:text-secondary transition-colors duration-300" href="#stories">家庭故事</a>
-<a class="hover:text-secondary transition-colors duration-300" href="#contact">联系我们</a>
-</nav>
-<!-- 移动端菜单按钮 -->
-<button class="md:hidden text-2xl" id="menuBtn">
-<i class="fa fa-bars"></i>
-</button>
-</div>
-</div>
-<!-- 移动端导航菜单 -->
-<div class="md:hidden bg-primary/98 hidden transition-all duration-300" id="mobileMenu">
-<div class="container mx-auto px-4 py-3 flex flex-col space-y-4">
-<a class="hover:text-secondary transition-colors duration-300 py-2 border-b border-gray-700" href="#home">首页</a>
-<a class="hover:text-secondary transition-colors duration-300 py-2 border-b border-gray-700" href="#family">家庭成员</a>
-<a class="hover:text-secondary transition-colors duration-300 py-2 border-b border-gray-700" href="#gallery">家庭相册</a>
-<a class="hover:text-secondary transition-colors duration-300 py-2 border-b border-gray-700" href="#events">活动日历</a>
-<a class="hover:text-secondary transition-colors duration-300 py-2 border-b border-gray-700" href="#stories">家庭故事</a>
-<a class="hover:text-secondary transition-colors duration-300 py-2" href="#contact">联系我们</a>
-</div>
-</div>
-</header>
-<!-- 主内容区 -->
-<main class="flex-grow">
-<!-- 首页/欢迎区 -->
-<section class="relative min-h-[80vh] flex items-center justify-center bg-cover bg-center" id="home" style="background-image: url('https://picsum.photos/id/1067/1920/1080');">
-<div class="absolute inset-0 bg-black/40"></div>
-<div class="container mx-auto px-4 relative z-10 text-center">
-<h1 class="text-[clamp(2.5rem,5vw,4rem)] font-bold text-white mb-6 text-shadow">欢迎来到HOME家庭</h1>
-<p class="text-[clamp(1rem,2vw,1.5rem)] text-white/90 mb-10 max-w-3xl mx-auto text-shadow">这里记录着我们的生活点滴，分享爱与温暖的家庭故事</p>
-<a class="bg-secondary hover:bg-secondary/80 text-accent font-bold py-3 px-8 rounded-full inline-block transition-all duration-300 shadow-lg hover:shadow-xl transform hover:-translate-y-1" href="#family">
-          认识我们的家人 <i class="fa fa-arrow-down ml-2"></i>
-</a>
-</div>
-<div class="absolute bottom-10 left-1/2 transform -translate-x-1/2 animate-bounce">
-<a class="text-white text-3xl opacity-80 hover:opacity-100 transition-opacity" href="#family">
-<i class="fa fa-angle-down"></i>
-</a>
-</div>
-</section>
-<!-- 家庭成员介绍 -->
-<section class="section-padding bg-white" id="family">
-<div class="container mx-auto px-4">
-<div class="text-center mb-16">
-<h2 class="text-[clamp(2rem,4vw,3rem)] font-bold text-primary mb-4">家庭成员</h2>
-<div class="w-24 h-1 bg-accent mx-auto mb-6"></div>
-<p class="text-gray-600 max-w-2xl mx-auto">我们是相亲相爱的一家人，每个人都有独特的故事</p>
-</div>
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-<!-- 爷爷 - 何文强 -->
-<div class="bg-neutral rounded-xl overflow-hidden shadow-lg card-hover">
-<div class="relative h-64 overflow-hidden">
-<img alt="爷爷 何文强" class="w-full h-full object-cover" src="https://picsum.photos/id/1074/600/400"/>
-<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-<h3 class="text-xl font-bold text-white">何文强</h3>
-<p class="text-white/90">爷爷</p>
-</div>
-</div>
-<div class="p-6">
-<p class="text-gray-700 mb-4">退休，喜欢书法和园艺，每天清晨都会在阳台侍弄花草，书法作品多次在社区展览。</p>
-<div class="flex space-x-3 text-accent">
-<a class="hover:text-primary transition-colors" href="#"><i class="fa fa-wechat"></i></a>
-<a class="hover:text-primary transition-colors" href="#"><i class="fa fa-book"></i></a>
-</div>
-</div>
-</div>
-<!-- 奶奶 - 姚伍成 -->
-<div class="bg-neutral rounded-xl overflow-hidden shadow-lg card-hover">
-<div class="relative h-64 overflow-hidden">
-<img alt="奶奶 姚伍成" class="w-full h-full object-cover" src="https://picsum.photos/id/1062/600/400"/>
-<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-<h3 class="text-xl font-bold text-white">姚伍成</h3>
-<p class="text-white/90">奶奶</p>
-</div>
-</div>
-<div class="p-6">
-<p class="text-gray-700 mb-4">家庭主妇，擅长传统刺绣和烹饪，尤其是手工水饺和腌菜，是家庭聚会的美食担当。</p>
-<div class="flex space-x-3 text-accent">
-<a class="hover:text-primary transition-colors" href="#"><i class="fa fa-wechat"></i></a>
-<a class="hover:text-primary transition-colors" href="#"><i class="fa fa-cutlery"></i></a>
-</div>
-</div>
-</div>
-<!-- 外婆 - 龙吉满 -->
-<div class="bg-neutral rounded-xl overflow-hidden shadow-lg card-hover">
-<div class="relative h-64 overflow-hidden">
-<img alt="外婆 龙吉满" class="w-full h-full object-cover" src="https://picsum.photos/id/1069/600/400"/>
-<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-<h3 class="text-xl font-bold text-white">龙吉满</h3>
-<p class="text-white/90">外婆</p>
-</div>
-</div>
-<div class="p-6">
-<p class="text-gray-700 mb-4">退休，热爱戏曲和剪纸艺术，经常教孙子孙女们制作传统剪纸作品。</p>
-<div class="flex space-x-3 text-accent">
-<a class="hover:text-primary transition-colors" href="#"><i class="fa fa-video-camera"></i></a>
-<a class="hover:text-primary transition-colors" href="#"><i class="fa fa-scissors"></i></a>
-</div>
-</div>
-</div>
-<!-- 外公 - 张文华 -->
-<div class="bg-neutral rounded-xl overflow-hidden shadow-lg card-hover">
-<div class="relative h-64 overflow-hidden">
-<img alt="外公 张文华" class="w-full h-full object-cover" src="https://picsum.photos/id/1076/600/400"/>
-<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-<h3 class="text-xl font-bold text-white">张文华</h3>
-<p class="text-white/90">外公</p>
-</div>
-</div>
-<div class="p-6">
-<p class="text-gray-700 mb-4">退休，喜欢钓鱼和中医养生，每周都会去公园练习太极，是家庭的健康顾问。</p>
-<div class="flex space-x-3 text-accent">
-<a class="hover:text-primary transition-colors" href="#"><i class="fa fa-fish"></i></a>
-<a class="hover:text-primary transition-colors" href="#"><i class="fa fa-medkit"></i></a>
-</div>
-</div>
-</div>
-<!-- 丈夫 - 何正阳 -->
-<div class="bg-neutral rounded-xl overflow-hidden shadow-lg card-hover">
-<div class="relative h-64 overflow-hidden">
-<img alt="丈夫 何正阳" class="w-full h-full object-cover" src="https://picsum.photos/id/1012/600/400"/>
-<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-<h3 class="text-xl font-bold text-white">何正阳</h3>
-<p class="text-white/90">丈夫 / 工业设计师</p>
-</div>
-</div>
-<div class="p-6">
-<p class="text-gray-700 mb-4">工业设计师专家，热爱户外徒步和摄影，擅长将自然元素融入设计，产品广受市场认可。</p>
-<div class="flex space-x-3 text-accent">
-<a class="hover:text-primary transition-colors" href="#"><i class="fa fa-camera"></i></a>
-<a class="hover:text-primary transition-colors" href="#"><i class="fa fa-mountain"></i></a>
-</div>
-</div>
-</div>
-<!-- 妻子 - 张正 -->
-<div class="bg-neutral rounded-xl overflow-hidden shadow-lg card-hover">
-<div class="relative h-64 overflow-hidden">
-<img alt="妻子 张正" class="w-full h-full object-cover" src="https://picsum.photos/id/1000/600/400"/>
-<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-<h3 class="text-xl font-bold text-white">张正</h3>
-<p class="text-white/90">妻子 / 小学数学老师</p>
-</div>
-</div>
-<div class="p-6">
-<p class="text-gray-700 mb-4">充满爱心的小学数学老师，喜欢烘焙和亲子阅读，擅长用游戏化教学激发孩子的学习兴趣。</p>
-<div class="flex space-x-3 text-accent">
-<a class="hover:text-primary transition-colors" href="#"><i class="fa fa-book"></i></a>
-<a class="hover:text-primary transition-colors" href="#"><i class="fa fa-cutlery"></i></a>
-</div>
-</div>
-</div>
-<!-- 儿子 - 何乐章 -->
-<div class="bg-neutral rounded-xl overflow-hidden shadow-lg card-hover">
-<div class="relative h-64 overflow-hidden">
-<img alt="儿子 何乐章" class="w-full h-full object-cover" src="https://picsum.photos/id/1062/600/400"/>
-<div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-<h3 class="text-xl font-bold text-white">何乐章</h3>
-<p class="text-white/90">儿子 / 3岁</p>
-</div>
-</div>
-<div class="p-6">
-<p class="text-gray-700 mb-4">活泼可爱的3岁宝宝，喜欢搭积木、听故事和奥特曼，是家庭的开心果。</p>
-<div class="flex space-x-3 text-accent">
-<a class="hover:text-primary transition-colors" href="#"><i class="fa fa-child"></i></a>
-<a class="hover:text-primary transition-colors" href="#"><i class="fa fa-cube"></i></a>
-</div>
-</div>
-</div>
-<!-- 兄弟姐妹扩展端口 -->
-<div class="bg-neutral rounded-xl overflow-hidden shadow-lg border-2 border-dashed border-gray-300 flex items-center justify-center h-64">
-<div class="text-center p-4">
-<i class="fa fa-user-plus text-4xl text-gray-400 mb-2"></i>
-<p class="text-gray-500">兄弟姐妹端口</p>
-<p class="text-sm text-gray-400">点击添加更多家庭成员</p>
-</div>
-</div>
-</div>
-</div>
-</section>
-<!-- 家庭相册 -->
-<section class="section-padding bg-gray-50" id="gallery">
-<div class="container mx-auto px-4">
-<div class="text-center mb-16">
-<h2 class="text-[clamp(2rem,4vw,3rem)] font-bold text-primary mb-4">家庭相册</h2>
-<div class="w-24 h-1 bg-accent mx-auto mb-6"></div>
-<p class="text-gray-600 max-w-2xl mx-auto">记录生活中的美好瞬间，每一张照片都承载着珍贵回忆</p>
-</div>
-<!-- 相册过滤 -->
-<div class="flex flex-wrap justify-center gap-4 mb-12">
-<button class="gallery-filter-btn active bg-primary text-white py-2 px-6 rounded-full hover:bg-primary/90 transition-colors" data-filter="all">全部</button>
-<button class="gallery-filter-btn bg-gray-200 text-gray-700 py-2 px-6 rounded-full hover:bg-gray-300 transition-colors" data-filter="family">全家福</button>
-<button class="gallery-filter-btn bg-gray-200 text-gray-700 py-2 px-6 rounded-full hover:bg-gray-300 transition-colors" data-filter="outdoor">户外活动</button>
-<button class="gallery-filter-btn bg-gray-200 text-gray-700 py-2 px-6 rounded-full hover:bg-gray-300 transition-colors" data-filter="holiday">节日</button>
-<button class="gallery-filter-btn bg-gray-200 text-gray-700 py-2 px-6 rounded-full hover:bg-gray-300 transition-colors" data-filter="kids">孩子成长</button>
-</div>
-<!-- 相册网格 -->
-<div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-6" id="gallery-grid">
-<!-- 全家福照片 -->
-<div class="gallery-item family" data-category="family">
-<div class="relative overflow-hidden rounded-xl shadow-md group">
-<img alt="全家福" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110" src="https://picsum.photos/id/1058/800/600"/>
-<div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-<div class="text-center p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-<h3 class="text-white text-xl font-bold mb-2">春节全家福</h3>
-<p class="text-white/80 mb-4">2025年春节全家合影</p>
-<button class="view-photo-btn bg-secondary hover:bg-secondary/80 text-accent font-bold py-2 px-4 rounded-full transition-colors">
-<i class="fa fa-search-plus mr-2"></i>查看大图
-                  </button>
-</div>
-</div>
-</div>
-</div>
-<!-- 户外活动照片 -->
-<div class="gallery-item outdoor" data-category="outdoor">
-<div class="relative overflow-hidden rounded-xl shadow-md group">
-<img alt="郊外野餐" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110" src="https://picsum.photos/id/1036/800/600"/>
-<div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-<div class="text-center p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-<h3 class="text-white text-xl font-bold mb-2">郊外野餐</h3>
-<p class="text-white/80 mb-4">2025年5月家庭户外活动</p>
-<button class="view-photo-btn bg-secondary hover:bg-secondary/80 text-accent font-bold py-2 px-4 rounded-full transition-colors">
-<i class="fa fa-search-plus mr-2"></i>查看大图
-                  </button>
-</div>
-</div>
-</div>
-</div>
-<!-- 节日照片 -->
-<div class="gallery-item holiday" data-category="holiday">
-<div class="relative overflow-hidden rounded-xl shadow-md group">
-<img alt="中秋团圆饭" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110" src="https://picsum.photos/id/1068/800/600"/>
-<div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-<div class="text-center p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-<h3 class="text-white text-xl font-bold mb-2">中秋团圆饭</h3>
-<p class="text-white/80 mb-4">2024年中秋节家庭聚餐</p>
-<button class="view-photo-btn bg-secondary hover:bg-secondary/80 text-accent font-bold py-2 px-4 rounded-full transition-colors">
-<i class="fa fa-search-plus mr-2"></i>查看大图
-                  </button>
-</div>
-</div>
-</div>
-</div>
-<!-- 孩子成长照片 -->
-<div class="gallery-item kids" data-category="kids">
-<div class="relative overflow-hidden rounded-xl shadow-md group">
-<img alt="何乐章生日" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110" src="https://picsum.photos/id/1070/800/600"/>
-<div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-<div class="text-center p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-<h3 class="text-white text-xl font-bold mb-2">何乐章3岁生日</h3>
-<p class="text-white/80 mb-4">2024年12月生日派对</p>
-<button class="view-photo-btn bg-secondary hover:bg-secondary/80 text-accent font-bold py-2 px-4 rounded-full transition-colors">
-<i class="fa fa-search-plus mr-2"></i>查看大图
-                  </button>
-</div>
-</div>
-</div>
-</div>
-<!-- 户外活动照片2 -->
-<div class="gallery-item outdoor" data-category="outdoor">
-<div class="relative overflow-hidden rounded-xl shadow-md group">
-<img alt="公园游玩" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110" src="https://picsum.photos/id/1043/800/600"/>
-<div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-<div class="text-center p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-<h3 class="text-white text-xl font-bold mb-2">公园游玩</h3>
-<p class="text-white/80 mb-4">2025年4月家庭公园日</p>
-<button class="view-photo-btn bg-secondary hover:bg-secondary/80 text-accent font-bold py-2 px-4 rounded-full transition-colors">
-<i class="fa fa-search-plus mr-2"></i>查看大图
-                  </button>
-</div>
-</div>
-</div>
-</div>
-<!-- 节日照片2 -->
-<div class="gallery-item holiday" data-category="holiday">
-<div class="relative overflow-hidden rounded-xl shadow-md group">
-<img alt="端午包粽子" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110" src="https://picsum.photos/id/1060/800/600"/>
-<div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-<div class="text-center p-4 transform translate-y-4 group-hover:translate-y-0 transition-transform duration-300">
-<h3 class="text-white text-xl font-bold mb-2">端午包粽子</h3>
-<p class="text-white/80 mb-4">2025年端午节家庭活动</p>
-<button class="view-photo-btn bg-secondary hover:bg-secondary/80 text-accent font-bold py-2 px-4 rounded-full transition-colors">
-<i class="fa fa-search-plus mr-2"></i>查看大图
-                  </button>
-</div>
-</div>
-</div>
-</div>
-</div>
-<!-- 加载更多按钮 -->
-<div class="text-center mt-12">
-<button class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1" id="load-more">
-            加载更多照片 <i class="fa fa-refresh ml-2"></i>
-</button>
-</div>
-</div>
-
-<div class="text-center mt-8">
-<input accept="image/*" class="hidden" id="upload-photo" type="file"/>
-<label class="bg-secondary text-accent font-bold py-2 px-6 rounded-full cursor-pointer hover:bg-secondary/80 inline-block" for="upload-photo">
-<i class="fa fa-upload mr-2"></i>上传照片
-  </label>
-</div>
-</section>
-<!-- 活动日历 -->
-<section class="section-padding bg-white" id="events">
-<div class="container mx-auto px-4">
-<div class="text-center mb-16">
-<h2 class="text-[clamp(2rem,4vw,3rem)] font-bold text-primary mb-4">活动日历</h2>
-<div class="w-24 h-1 bg-accent mx-auto mb-6"></div>
-<p class="text-gray-600 max-w-2xl mx-auto">记录家庭重要活动，不错过每一个温馨时刻</p>
-</div>
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-10">
-<!-- 左侧日历 -->
-<div class="lg:col-span-2 bg-neutral rounded-xl shadow-lg p-6">
-<div class="flex justify-between items-center mb-6">
-<h3 class="text-xl font-bold text-primary" id="current-month">2025年6月</h3>
-<div class="flex space-x-2">
-<button class="bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-full transition-colors" id="prev-month">
-<i class="fa fa-chevron-left"></i>
-</button>
-<button class="bg-gray-200 hover:bg-gray-300 text-gray-700 p-2 rounded-full transition-colors" id="next-month">
-<i class="fa fa-chevron-right"></i>
-</button>
-</div>
-</div>
-<!-- 日历网格 -->
-<div class="grid grid-cols-7 gap-1">
-<!-- 星期标题 -->
-<div class="text-center font-bold text-gray-500 py-2">周日</div>
-<div class="text-center font-bold text-gray-500 py-2">周一</div>
-<div class="text-center font-bold text-gray-500 py-2">周二</div>
-<div class="text-center font-bold text-gray-500 py-2">周三</div>
-<div class="text-center font-bold text-gray-500 py-2">周四</div>
-<div class="text-center font-bold text-gray-500 py-2">周五</div>
-<div class="text-center font-bold text-gray-500 py-2">周六</div>
-<!-- 上个月的日期 -->
-<div class="text-center text-gray-400 py-3">28</div>
-<div class="text-center text-gray-400 py-3">29</div>
-<div class="text-center text-gray-400 py-3">30</div>
-<div class="text-center text-gray-400 py-3">31</div>
-<!-- 当月的日期 -->
-<div class="text-center py-3">1</div>
-<div class="text-center py-3">2</div>
-<div class="text-center py-3">3</div>
-<div class="text-center py-3">4</div>
-<div class="text-center py-3">5</div>
-<div class="text-center py-3">6</div>
-<div class="text-center py-3">7</div>
-<div class="text-center py-3">8</div>
-<div class="text-center py-3">9</div>
-<div class="text-center py-3">10</div>
-<div class="text-center py-3">11</div>
-<div class="text-center py-3">12</div>
-<div class="text-center py-3">13</div>
-<div class="text-center py-3">14</div>
-<div class="text-center py-3">15</div>
-<div class="text-center py-3">16</div>
-<div class="text-center py-3">17</div>
-<div class="text-center py-3">18</div>
-<div class="text-center py-3">19</div>
-<div class="text-center py-3">20</div>
-<div class="text-center py-3">21</div>
-<div class="text-center py-3">22</div>
-<div class="text-center py-3">23</div>
-<div class="text-center py-3">24</div>
-<div class="text-center bg-accent text-white rounded-full w-10 h-10 mx-auto flex items-center justify-center font-bold">25</div>
-<div class="text-center py-3 relative group">
-                26
-                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 bg-black text-white p-2 rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
-<p class="text-sm font-medium">何乐章生日派对</p>
-</div>
-</div>
-<div class="text-center py-3 relative group">
-                27
-                <div class="absolute bottom-full left-1/2 transform -translate-x-1/2 mb-2 w-64 bg-black text-white p-2 rounded opacity-0 invisible group-hover:opacity-100 group-hover:visible transition-all z-10">
-<p class="text-sm font-medium">家庭徒步活动</p>
-</div>
-</div>
-<div class="text-center py-3">28</div>
-<div class="text-center py-3">29</div>
-<div class="text-center py-3">30</div>
-<!-- 下个月的日期 -->
-<div class="text-center text-gray-400 py-3">1</div>
-<div class="text-center text-gray-400 py-3">2</div>
-<div class="text-center text-gray-400 py-3">3</div>
-<div class="text-center text-gray-400 py-3">4</div>
-<div class="text-center text-gray-400 py-3">5</div>
-</div>
-</div>
-<!-- 右侧即将到来的活动 -->
-<div class="bg-neutral rounded-xl shadow-lg p-6">
-<h3 class="text-xl font-bold text-primary mb-6">即将到来的活动</h3>
-<div class="space-y-6">
-<!-- 活动1 -->
-<div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-accent">
-<div class="flex items-center mb-2">
-<div class="bg-accent text-white rounded-full w-10 h-10 flex items-center justify-center mr-3">
-<i class="fa fa-birthday-cake"></i>
-</div>
-<div>
-<h4 class="font-bold">何乐章4岁生日</h4>
-<p class="text-sm text-gray-500">12月21日 (还有几个月)</p>
-</div>
-</div>
-<p class="text-gray-700 text-sm">家庭生日派对，邀请亲朋好友共同庆祝</p>
-</div>
-<!-- 活动2 -->
-<div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-primary">
-<div class="flex items-center mb-2">
-<div class="bg-primary text-white rounded-full w-10 h-10 flex items-center justify-center mr-3">
-<i class="fa fa-mountain"></i>
-</div>
-<div>
-<h4 class="font-bold">家庭徒步活动</h4>
-<p class="text-sm text-gray-500">6月27日 (下周五)</p>
-</div>
-</div>
-<p class="text-gray-700 text-sm">前往郊外森林公园徒步，野餐午餐</p>
-</div>
-<!-- 活动3 -->
-<div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-secondary">
-<div class="flex items-center mb-2">
-<div class="bg-secondary text-accent rounded-full w-10 h-10 flex items-center justify-center mr-3">
-<i class="fa fa-users"></i>
-</div>
-<div>
-<h4 class="font-bold"> grandparents 探访</h4>
-<p class="text-sm text-gray-500">7月5日 (下下周六)</p>
-</div>
-</div>
-<p class="text-gray-700 text-sm">爷爷奶奶外公外婆来访，家庭聚餐</p>
-</div>
-<!-- 活动4 -->
-<div class="bg-white rounded-lg shadow-sm p-4 border-l-4 border-gray-500">
-<div class="flex items-center mb-2">
-<div class="bg-gray-500 text-white rounded-full w-10 h-10 flex items-center justify-center mr-3">
-<i class="fa fa-calendar-check-o"></i>
-</div>
-<div>
-<h4 class="font-bold">张正教师节庆祝</h4>
-<p class="text-sm text-gray-500">9月10日 (周三)</p>
-</div>
-</div>
-<p class="text-gray-700 text-sm">庆祝张正老师的教师节，孩子手工制作礼物</p>
-</div>
-</div>
-<!-- 添加新活动按钮 -->
-<button class="mt-8 w-full bg-primary hover:bg-primary/90 text-white font-bold py-3 px-4 rounded-lg transition-colors flex items-center justify-center" id="add-event">
-<i class="fa fa-plus-circle mr-2"></i> 添加新活动
-            </button>
-</div>
-</div>
-</div>
-</section>
-<!-- 家庭故事 -->
-<section class="section-padding bg-gray-50" id="stories">
-<div class="container mx-auto px-4">
-<div class="text-center mb-16">
-<h2 class="text-[clamp(2rem,4vw,3rem)] font-bold text-primary mb-4">家庭故事</h2>
-<div class="w-24 h-1 bg-accent mx-auto mb-6"></div>
-<p class="text-gray-600 max-w-2xl mx-auto">记录那些值得永远珍藏的家庭回忆与感动时刻</p>
-</div>
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-<!-- 故事1 -->
-<div class="bg-white rounded-xl shadow-lg overflow-hidden group">
-<div class="relative h-64">
-<img alt="何乐章出生" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src="https://picsum.photos/id/1067/800/400"/>
-<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
-<div class="absolute bottom-0 left-0 p-6">
-<span class="bg-accent text-white text-xs font-bold px-3 py-1 rounded-full">2022年6月</span>
-<h3 class="text-white text-xl font-bold mt-2">何乐章的诞生</h3>
-</div>
-</div>
-<div class="p-6">
-<p class="text-gray-700 mb-4">2021年12月21日，我们迎来了家庭的新成员何乐章。从那天起，家里充满了欢声笑语，初为父母的我们虽然忙碌，但每一天都充满了幸福。爷爷奶奶外公外婆轮流来照顾宝宝，家庭的纽带更加紧密。</p>
-<div class="flex items-center justify-between">
-<div class="flex items-center">
-<img alt="何正阳" class="w-10 h-10 rounded-full object-cover mr-3" src="https://picsum.photos/id/1012/100/100"/>
-<span class="text-gray-600">何正阳</span>
-</div>
-<div class="flex space-x-3">
-<button class="text-gray-400 hover:text-primary transition-colors">
-<i class="fa fa-heart-o"></i> 24
-                  </button>
-<button class="text-gray-400 hover:text-primary transition-colors">
-<i class="fa fa-comment-o"></i> 8
-                  </button>
-</div>
-</div>
-</div>
-</div>
-<!-- 故事2 -->
-<div class="bg-white rounded-xl shadow-lg overflow-hidden group">
-<div class="relative h-64">
-<img alt="家庭旅行" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src="https://picsum.photos/id/1055/800/400"/>
-<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
-<div class="absolute bottom-0 left-0 p-6">
-<span class="bg-accent text-white text-xs font-bold px-3 py-1 rounded-full">2024年08月</span>
-<h3 class="text-white text-xl font-bold mt-2">第一次全家旅行</h3>
-</div>
-</div>
-<div class="p-6">
-<p class="text-gray-700 mb-4">2024年暑假，我们带着2岁多的乐章进行了第一次全家旅行，目的地是西北。我们在沙滩草地湖边玩耍，参观博物馆景点，乐章第一次看到沙漠时兴奋的样子至今记忆犹新。这次旅行让我们感受到了一家人旅行的幸福。</p>
-<div class="flex items-center justify-between">
-<div class="flex items-center">
-<img alt="张正" class="w-10 h-10 rounded-full object-cover mr-3" src="https://picsum.photos/id/1000/100/100"/>
-<span class="text-gray-600">张正</span>
-</div>
-<div class="flex space-x-3">
-<button class="text-gray-400 hover:text-primary transition-colors">
-<i class="fa fa-heart-o"></i> 32
-                  </button>
-<button class="text-gray-400 hover:text-primary transition-colors">
-<i class="fa fa-comment-o"></i> 12
-                  </button>
-</div>
-</div>
-</div>
-</div>
-<!-- 故事3 -->
-<div class="bg-white rounded-xl shadow-lg overflow-hidden group">
-<div class="relative h-64">
-<img alt="爷爷的书法课" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src="https://picsum.photos/id/1071/800/400"/>
-<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
-<div class="absolute bottom-0 left-0 p-6">
-<span class="bg-accent text-white text-xs font-bold px-3 py-1 rounded-full">2025年3月</span>
-<h3 class="text-white text-xl font-bold mt-2">爷爷的书法课</h3>
-</div>
-</div>
-<div class="p-6">
-<p class="text-gray-700 mb-4">爷爷何文强开始教乐章学习书法，虽然乐章还很小，但已经能拿着毛笔有模有样地涂鸦。爷爷总是耐心地指导，这不仅是书法的启蒙，更是传统文化的传承。看着爷孙俩一起在书桌前的样子，全家人都感到无比温馨。</p>
-<div class="flex items-center justify-between">
-<div class="flex items-center">
-<img alt="何文强" class="w-10 h-10 rounded-full object-cover mr-3" src="https://picsum.photos/id/1074/100/100"/>
-<span class="text-gray-600">何文强</span>
-</div>
-<div class="flex space-x-3">
-<button class="text-gray-400 hover:text-primary transition-colors">
-<i class="fa fa-heart-o"></i> 18
-                  </button>
-<button class="text-gray-400 hover:text-primary transition-colors">
-<i class="fa fa-comment-o"></i> 6
-                  </button>
-</div>
-</div>
-</div>
-</div>
-<!-- 故事4 -->
-<div class="bg-white rounded-xl shadow-lg overflow-hidden group">
-<div class="relative h-64">
-<img alt="外婆的剪纸" class="w-full h-full object-cover transition-transform duration-700 group-hover:scale-105" src="https://picsum.photos/id/1060/800/400"/>
-<div class="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent"></div>
-<div class="absolute bottom-0 left-0 p-6">
-<span class="bg-accent text-white text-xs font-bold px-3 py-1 rounded-full">2025年5月</span>
-<h3 class="text-white text-xl font-bold mt-2">外婆的剪纸课</h3>
-</div>
-</div>
-<div class="p-6">
-<p class="text-gray-700 mb-4">外婆龙吉满教乐章学习传统剪纸，第一张作品是一只简单的小兔子。虽然线条还不流畅，但乐章拿着自己的作品兴奋地展示给每个人看。这样的亲子互动不仅培养了孩子的动手能力，更让传统文化在家庭中得以延续。</p>
-<div class="flex items-center justify-between">
-<div class="flex items-center">
-<img alt="龙吉满" class="w-10 h-10 rounded-full object-cover mr-3" src="https://picsum.photos/id/1069/100/100"/>
-<span class="text-gray-600">龙吉满</span>
-</div>
-<div class="flex space-x-3">
-<button class="text-gray-400 hover:text-primary transition-colors">
-<i class="fa fa-heart-o"></i> 22
-                  </button>
-<button class="text-gray-400 hover:text-primary transition-colors">
-<i class="fa fa-comment-o"></i> 7
-                  </button>
-</div>
-</div>
-</div>
-</div>
-</div>
-<!-- 查看更多故事按钮 -->
-<div class="text-center mt-12">
-<button class="bg-primary hover:bg-primary/90 text-white font-bold py-3 px-8 rounded-full transition-all duration-300 shadow-md hover:shadow-lg transform hover:-translate-y-1">
-            查看更多故事 <i class="fa fa-arrow-right ml-2"></i>
-</button>
-</div>
-</div>
-</section>
-<!-- 联系我们 -->
-<section class="section-padding bg-white" id="contact">
-<div class="container mx-auto px-4">
-<div class="text-center mb-16">
-<h2 class="text-[clamp(2rem,4vw,3rem)] font-bold text-primary mb-4">联系我们</h2>
-<div class="w-24 h-1 bg-accent mx-auto mb-6"></div>
-<p class="text-gray-600 max-w-2xl mx-auto">有什么想分享的？填写下面的表单，给我们留言吧</p>
-</div>
-<div class="grid grid-cols-1 lg:grid-cols-2 gap-10">
-<!-- 联系表单 -->
-<div class="bg-neutral rounded-xl shadow-lg p-8">
-<h3 class="text-xl font-bold text-primary mb-6">发送消息</h3>
-<form class="space-y-6" id="contact-form">
-<div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-<div>
-<label class="block text-gray-700 font-medium mb-2" for="name">姓名</label>
-<input class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring focus:ring-primary/20 outline-none transition-all" id="name" placeholder="请输入您的姓名" type="text"/>
-</div>
-<div>
-<label class="block text-gray-700 font-medium mb-2" for="email">邮箱</label>
-<input class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring focus:ring-primary/20 outline-none transition-all" id="email" placeholder="请输入您的邮箱" type="email"/>
-</div>
-</div>
-<div>
-<label class="block text-gray-700 font-medium mb-2" for="subject">主题</label>
-<input class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring focus:ring-primary/20 outline-none transition-all" id="subject" placeholder="请输入消息主题" type="text"/>
-</div>
-<div>
-<label class="block text-gray-700 font-medium mb-2" for="message">消息</label>
-<textarea class="w-full px-4 py-3 rounded-lg border border-gray-300 focus:border-primary focus:ring focus:ring-primary/20 outline-none transition-all resize-none" id="message" placeholder="请输入您的消息内容" rows="5"></textarea>
-</div>
-<div>
-<button class="w-full bg-primary hover:bg-primary/90 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center" type="submit">
-<i class="fa fa-paper-plane mr-2"></i> 发送消息
-                </button>
-</div>
-</form>
-</div>
-<!-- 联系信息和地图 -->
-<div class="flex flex-col space-y-10">
-<!-- 联系信息 -->
-<div class="bg-neutral rounded-xl shadow-lg p-8">
-<h3 class="text-xl font-bold text-primary mb-6">联系方式</h3>
-<div class="space-y-6">
-<div class="flex items-start">
-<div class="bg-primary/10 text-primary rounded-full w-12 h-12 flex items-center justify-center mr-4 shrink-0">
-<i class="fa fa-map-marker"></i>
-</div>
-<div>
-<h4 class="font-bold text-gray-800 mb-1">家庭住址</h4>
-<p class="text-gray-600">东莞市横沥镇松湖明珠13502号 HOME家园</p>
-</div>
-</div>
-<div class="flex items-start">
-<div class="bg-primary/10 text-primary rounded-full w-12 h-12 flex items-center justify-center mr-4 shrink-0">
-<i class="fa fa-phone"></i>
-</div>
-<div>
-<h4 class="font-bold text-gray-800 mb-1">电话联系</h4>
-<p class="text-gray-600">何正阳: 151-1335-7640</p>
-<p class="text-gray-600">张正: 1479-8951-4962</p>
-</div>
-</div>
-<div class="flex items-start">
-<div class="bg-primary/10 text-primary rounded-full w-12 h-12 flex items-center justify-center mr-4 shrink-0">
-<i class="fa fa-envelope"></i>
-</div>
-<div>
-<h4 class="font-bold text-gray-800 mb-1">电子邮箱</h4>
-<p class="text-gray-600">hefamily@example.com</p>
-</div>
-</div>
-<div class="flex items-start">
-<div class="bg-primary/10 text-primary rounded-full w-12 h-12 flex items-center justify-center mr-4 shrink-0">
-<i class="fa fa-clock-o"></i>
-</div>
-<div>
-<h4 class="font-bold text-gray-800 mb-1">家庭开放时间</h4>
-<p class="text-gray-600">每周日下午2:00-5:00 欢迎来访</p>
-</div>
-</div>
-</div>
-<!-- 社交媒体 -->
-<div class="mt-8">
-<h4 class="font-bold text-gray-800 mb-4">关注我们</h4>
-<div class="flex space-x-4">
-<a class="bg-primary hover:bg-primary/90 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors" href="#">
-<i class="fa fa-weixin"></i>
-</a>
-<a class="bg-primary hover:bg-primary/90 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors" href="#">
-<i class="fa fa-weibo"></i>
-</a>
-<a class="bg-primary hover:bg-primary/90 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors" href="#">
-<i class="fa fa-instagram"></i>
-</a>
-<a class="bg-primary hover:bg-primary/90 text-white w-10 h-10 rounded-full flex items-center justify-center transition-colors" href="#">
-<i class="fa fa-youtube-play"></i>
-</a>
-</div>
-</div>
-</div>
-<!-- 地图占位 -->
-<div class="bg-neutral rounded-xl shadow-lg overflow-hidden h-80">
-<div class="w-full h-full bg-gray-200 flex items-center justify-center">
-<div class="text-center p-4">
-<i class="fa fa-map-o text-4xl text-gray-400 mb-2"></i>
-<p class="text-gray-500">家庭位置地图将在这里显示</p>
-</div>
-</div>
-</div>
-</div>
-</div>
-</div>
-</section>
-</main>
-<!-- 页脚 -->
-
-<div class="fixed inset-0 z-50 bg-black/50 flex items-center justify-center hidden" id="member-modal">
-<div class="bg-white rounded-lg w-full max-w-lg p-6 shadow-xl relative">
-<button class="absolute top-4 right-4 text-gray-500 hover:text-red-600" id="close-member-modal"><i class="fa fa-times"></i></button>
-<h3 class="text-xl font-bold mb-4 text-primary">添加 / 编辑家庭成员</h3>
-<form class="space-y-4" id="member-form">
-<input id="member-index" type="hidden" value="-1"/>
-<div>
-<label class="block mb-1">姓名</label>
-<input class="w-full border rounded px-3 py-2" id="member-name" required="" type="text"/>
-</div>
-<div>
-<label class="block mb-1">身份</label>
-<input class="w-full border rounded px-3 py-2" id="member-role" required="" type="text"/>
-</div>
-<div>
-<label class="block mb-1">介绍</label>
-<textarea class="w-full border rounded px-3 py-2" id="member-bio" rows="3"></textarea>
-</div>
-<div>
-<label class="block mb-1">图片链接</label>
-<input class="w-full border rounded px-3 py-2" id="member-img" type="url"/>
-</div>
-<div class="text-right">
-<button class="bg-primary hover:bg-primary/90 text-white px-4 py-2 rounded" type="submit">保存</button>
-</div>
-</form>
-</div>
-</div>
-<footer class="bg-primary text-white py-12">
-<div class="container mx-auto px-4">
-<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
-<!-- 关于我们 -->
-<div>
-<h3 class="text-xl font-bold mb-6">关于我们</h3>
-<p class="text-white/80 mb-6">HOME家庭是一个充满爱与温暖的大家庭，三代同堂，其乐融融。这个网站记录着我们的生活点滴，分享家庭的幸福与感动。</p>
-<div class="flex space-x-4">
-<a class="text-white/80 hover:text-white transition-colors" href="#">
-<i class="fa fa-weixin"></i>
-</a>
-<a class="text-white/80 hover:text-white transition-colors" href="#">
-<i class="fa fa-weibo"></i>
-</a>
-<a class="text-white/80 hover:text-white transition-colors" href="#">
-<i class="fa fa-instagram"></i>
-</a>
-<a class="text-white/80 hover:text-white transition-colors" href="#">
-<i class="fa fa-youtube-play"></i>
-</a>
-</div>
-</div>
-<!-- 快速链接 -->
-<div>
-<h3 class="text-xl font-bold mb-6">快速链接</h3>
-<ul class="space-y-3">
-<li><a class="text-white/80 hover:text-white transition-colors" href="#home">首页</a></li>
-<li><a class="text-white/80 hover:text-white transition-colors" href="#family">家庭成员</a></li>
-<li><a class="text-white/80 hover:text-white transition-colors" href="#gallery">家庭相册</a></li>
-<li><a class="text-white/80 hover:text-white transition-colors" href="#events">活动日历</a></li>
-<li><a class="text-white/80 hover:text-white transition-colors" href="#stories">家庭故事</a></li>
-<li><a class="text-white/80 hover:text-white transition-colors" href="#contact">联系我们</a></li>
-</ul>
-</div>
-<!-- 最新动态 -->
-<div>
-<h3 class="text-xl font-bold mb-6">最新动态</h3>
-<ul class="space-y-4">
-<li class="flex">
-<div class="bg-secondary/20 text-accent rounded-full w-10 h-10 flex items-center justify-center mr-3 shrink-0">
-<i class="fa fa-calendar"></i>
-</div>
-<div>
-<p class="text-white/80">何乐章即将庆祝3岁生日</p>
-<p class="text-white/60 text-sm">2024-12-20</p>
-</div>
-</li>
-<li class="flex">
-<div class="bg-secondary/20 text-accent rounded-full w-10 h-10 flex items-center justify-center mr-3 shrink-0">
-<i class="fa fa-trophy"></i>
-</div>
-<div>
-<p class="text-white/80">何正阳设计作品展示</p>
-<p class="text-white/60 text-sm">2025-06-15</p>
-</div>
-</li>
-</ul>
-</div>
-<!-- 订阅 -->
-<div>
-<h3 class="text-xl font-bold mb-6">订阅更新</h3>
-<p class="text-white/80 mb-4">订阅我们的家庭动态，第一时间获取最新消息</p>
-<form class="space-y-3">
-<div>
-<input class="w-full px-4 py-3 rounded-lg bg-white/10 border border-white/20 text-white placeholder-white/40 focus:outline-none focus:ring-2 focus:ring-secondary" placeholder="您的邮箱地址" type="email"/>
-</div>
-<button class="w-full bg-secondary hover:bg-secondary/90 text-accent font-bold py-3 px-6 rounded-lg transition-colors" type="submit">
-              订阅更新
-            </button>
-</form>
-</div>
-</div>
-<div class="border-t border-white/20 mt-12 pt-8 text-center">
-<p class="text-white/70">© 2025 HOME家庭网站 - 保留所有权利</p>
-</div>
-</div>
-</footer>
-<!-- 照片查看模态框 -->
-<div class="fixed inset-0 bg-black/90 z-50 flex items-center justify-center opacity-0 invisible transition-all duration-300" id="photo-modal">
-<button class="absolute top-6 right-6 text-white text-3xl hover:text-secondary transition-colors" id="close-modal">
-<i class="fa fa-times"></i>
-</button>
-<div class="max-w-4xl w-full mx-4">
-<img alt="大图预览" class="w-full h-auto max-h-[80vh] object-contain" id="modal-image" src=""/>
-<div class="mt-4 text-center">
-<h3 class="text-white text-xl font-bold" id="modal-title"></h3>
-<p class="text-white/80" id="modal-description"></p>
-</div>
-</div>
-</div>
-<!-- 返回顶部按钮 -->
-<button class="fixed bottom-6 right-6 bg-primary hover:bg-primary/90 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg transform translate-y-20 opacity-0 transition-all duration-300 z-40" id="back-to-top">
-<i class="fa fa-chevron-up"></i>
-</button>
-<!-- JavaScript -->
-<script>
-    // 导航栏滚动效果
-    const navbar = document.getElementById('navbar');
-    window.addEventListener('scroll', () => {
-      if (window.scrollY > 50) {
-        navbar.classList.add('py-2', 'shadow-md');
-        navbar.classList.remove('py-3');
-      } else {
-        navbar.classList.add('py-3');
-        navbar.classList.remove('py-2', 'shadow-md');
-      }
-    });
-
-    // 移动端菜单
-    const menuBtn = document.getElementById('menuBtn');
-    const mobileMenu = document.getElementById('mobileMenu');
-    
-    menuBtn.addEventListener('click', () => {
-      mobileMenu.classList.toggle('hidden');
-      if (mobileMenu.classList.contains('hidden')) {
-        menuBtn.innerHTML = '<i class="fa fa-bars"></i>';
-      } else {
-        menuBtn.innerHTML = '<i class="fa fa-times"></i>';
-      }
-    });
-
-    // 平滑滚动
-    document.querySelectorAll('a[href^="#"]').forEach(anchor => {
-      anchor.addEventListener('click', function (e) {
-        e.preventDefault();
-        
-        // 关闭移动菜单
-        if (!mobileMenu.classList.contains('hidden')) {
-          mobileMenu.classList.add('hidden');
-          menuBtn.innerHTML = '<i class="fa fa-bars"></i>';
-        }
-        
-        const targetId = this.getAttribute('href');
-        const targetElement = document.querySelector(targetId);
-        
-        if (targetElement) {
-          window.scrollTo({
-            top: targetElement.offsetTop - 80,
-            behavior: 'smooth'
-          });
-        }
-      });
-    });
-
-    // 返回顶部按钮
-    const backToTopBtn = document.getElementById('back-to-top');
-    
-    window.addEventListener('scroll', () => {
-      if (window.scrollY > 300) {
-        backToTopBtn.classList.remove('translate-y-20', 'opacity-0');
-        backToTopBtn.classList.add('translate-y-0', 'opacity-100');
-      } else {
-        backToTopBtn.classList.add('translate-y-20', 'opacity-0');
-        backToTopBtn.classList.remove('translate-y-0', 'opacity-100');
-      }
-    });
-    
-    backToTopBtn.addEventListener('click', () => {
-      window.scrollTo({
-        top: 0,
-        behavior: 'smooth'
-      });
-    });
-
-    // 相册过滤
-    const filterBtns = document.querySelectorAll('.gallery-filter-btn');
-    const galleryItems = document.querySelectorAll('.gallery-item');
-    
-    filterBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        // 更新按钮样式
-        filterBtns.forEach(b => {
-          b.classList.remove('active', 'bg-primary', 'text-white');
-          b.classList.add('bg-gray-200', 'text-gray-700');
-        });
-        btn.classList.add('active', 'bg-primary', 'text-white');
-        btn.classList.remove('bg-gray-200', 'text-gray-700');
-        
-        // 过滤项目
-        const filter = btn.getAttribute('data-filter');
-        
-        galleryItems.forEach(item => {
-          if (filter === 'all' || item.getAttribute('data-category') === filter) {
-            item.style.display = 'block';
-          } else {
-            item.style.display = 'none';
-          }
-        });
-      });
-    });
-
-    // 照片查看模态框
-    const photoModal = document.getElementById('photo-modal');
-    const modalImage = document.getElementById('modal-image');
-    const modalTitle = document.getElementById('modal-title');
-    const modalDescription = document.getElementById('modal-description');
-    const closeModal = document.getElementById('close-modal');
-    const viewPhotoBtns = document.querySelectorAll('.view-photo-btn');
-    
-    viewPhotoBtns.forEach(btn => {
-      btn.addEventListener('click', () => {
-        const galleryItem = btn.closest('.gallery-item');
-        const image = galleryItem.querySelector('img');
-        const title = galleryItem.querySelector('h3').textContent;
-        const description = galleryItem.querySelector('p').textContent;
-        
-        modalImage.src = image.src;
-        modalImage.alt = image.alt;
-        modalTitle.textContent = title;
-        modalDescription.textContent = description;
-        
-        photoModal.classList.remove('opacity-0', 'invisible');
-        document.body.style.overflow = 'hidden';
-      });
-    });
-    
-    closeModal.addEventListener('click', () => {
-      photoModal.classList.add('opacity-0', 'invisible');
-      document.body.style.overflow = 'auto';
-    });
-    
-    // 点击模态框背景关闭
-    photoModal.addEventListener('click', (e) => {
-      if (e.target === photoModal) {
-        photoModal.classList.add('opacity-0', 'invisible');
-        document.body.style.overflow = 'auto';
-      }
-    });
-
-    // 联系表单
-    const contactForm = document.getElementById('contact-form');
-    
-    contactForm.addEventListener('submit', (e) => {
-      e.preventDefault();
+<body class="bg-gray-50 font-inter text-dark">
+  <!-- 顶部导航栏 -->
+  <header class="fixed top-0 left-0 right-0 bg-white/80 backdrop-blur shadow-sm z-50 transition-all duration-300" id="main-header">
+    <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-2">
+        <i class="fa fa-camera-retro text-primary text-2xl"></i>
+        <h1 class="text-xl font-bold text-primary">PhotoBook</h1>
+      </div>
       
-      // 简单验证
-      const name = document.getElementById('name').value;
-      const email = document.getElementById('email').value;
-      const subject = document.getElementById('subject').value;
-      const message = document.getElementById('message').value;
+      <div class="hidden md:flex items-center space-x-6">
+        <button class="text-gray-600 hover:text-primary transition-colors duration-200" id="btn-albums">
+          <i class="fa fa-folder-open mr-1"></i> 相册
+        </button>
+        <button class="text-gray-600 hover:text-primary transition-colors duration-200" id="btn-timeline">
+          <i class="fa fa-calendar mr-1"></i> 时间线
+        </button>
+        <button class="text-gray-600 hover:text-primary transition-colors duration-200" id="btn-trash">
+          <i class="fa fa-trash mr-1"></i> 回收站
+        </button>
+      </div>
       
-      if (!name || !email || !subject || !message) {
-        alert('请填写所有字段');
-        return;
-      }
-      
-      // 模拟提交成功
-      alert('消息已发送！我们会尽快回复您。');
-      contactForm.reset();
-    });
-
-    // 日历月份切换
-    const currentMonthEl = document.getElementById('current-month');
-    const prevMonthBtn = document.getElementById('prev-month');
-    const nextMonthBtn = document.getElementById('next-month');
-    
-    let currentMonth = 6;
-    let currentYear = 2025;
-    
-    prevMonthBtn.addEventListener('click', () => {
-      currentMonth--;
-      if (currentMonth < 1) {
-        currentMonth = 12;
-        currentYear--;
-      }
-      currentMonthEl.textContent = `${currentYear}年${currentMonth}月`;
-    });
-    
-    nextMonthBtn.addEventListener('click', () => {
-      currentMonth++;
-      if (currentMonth > 12) {
-        currentMonth = 1;
-        currentYear++;
-      }
-      currentMonthEl.textContent = `${currentYear}年${currentMonth}月`;
-    });
-
-    // 添加新活动按钮
-    const addEventBtn = document.getElementById('add-event');
-    
-    addEventBtn.addEventListener('click', () => {
-      alert('活动添加功能将在未来版本中实现');
-    });
-
-    // 加载更多照片按钮
-    const loadMoreBtn = document.getElementById('load-more');
-    
-    loadMoreBtn.addEventListener('click', () => {
-      alert('更多照片将在未来版本中加载');
-    });
-  
-
-
-// ---------- 功能 1：家庭成员编辑 ----------
-const memberModal = document.getElementById("member-modal");
-const closeMemberModal = document.getElementById("close-member-modal");
-const addMemberPort = document.querySelector(".fa-user-plus").closest("div");
-addMemberPort.style.cursor = "pointer";
-
-addMemberPort.addEventListener("click", () => {
-  document.getElementById("member-form").reset();
-  document.getElementById("member-index").value = -1;
-  memberModal.classList.remove("hidden");
-});
-
-closeMemberModal.addEventListener("click", () => {
-  memberModal.classList.add("hidden");
-});
-
-document.getElementById("member-form").addEventListener("submit", (e) => {
-  e.preventDefault();
-  const name = document.getElementById("member-name").value;
-  const role = document.getElementById("member-role").value;
-  const bio = document.getElementById("member-bio").value;
-  const img = document.getElementById("member-img").value;
-
-  const card = document.createElement("div");
-  card.className = "bg-neutral rounded-xl overflow-hidden shadow-lg card-hover";
-  card.innerHTML = `
-    <div class="relative h-64 overflow-hidden">
-      <img src="${img}" alt="${role} ${name}" class="w-full h-full object-cover">
-      <div class="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-black/70 to-transparent p-4">
-        <h3 class="text-xl font-bold text-white">${name}</h3>
-        <p class="text-white/90">${role}</p>
+      <div class="flex items-center space-x-4">
+        <button class="hidden md:flex items-center px-4 py-2 bg-primary text-white rounded-full hover:bg-primary/90 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5" id="btn-export">
+          <i class="fa fa-share-square-o mr-2"></i> 导出成册
+        </button>
+        <button class="md:hidden text-gray-600 hover:text-primary transition-colors duration-200" id="btn-menu">
+          <i class="fa fa-bars text-xl"></i>
+        </button>
       </div>
     </div>
-    <div class="p-6">
-      <p class="text-gray-700 mb-4">${bio}</p>
-    </div>`;
-  addMemberPort.before(card);
-  memberModal.classList.add("hidden");
-});
+    
+    <!-- 移动端菜单 -->
+    <div class="md:hidden bg-white shadow-lg absolute w-full left-0 top-full transform -translate-y-full opacity-0 transition-all duration-300 pointer-events-none" id="mobile-menu">
+      <div class="container mx-auto px-4 py-2 flex flex-col space-y-3">
+        <button class="text-gray-600 hover:text-primary transition-colors duration-200 py-2 text-left" id="btn-albums-mobile">
+          <i class="fa fa-folder-open mr-1"></i> 相册
+        </button>
+        <button class="text-gray-600 hover:text-primary transition-colors duration-200 py-2 text-left" id="btn-timeline-mobile">
+          <i class="fa fa-calendar mr-1"></i> 时间线
+        </button>
+        <button class="text-gray-600 hover:text-primary transition-colors duration-200 py-2 text-left" id="btn-trash-mobile">
+          <i class="fa fa-trash mr-1"></i> 回收站
+        </button>
+        <button class="flex items-center px-4 py-2 bg-primary text-white rounded-full hover:bg-primary/90 transition-all duration-200 shadow-md hover:shadow-lg my-2" id="btn-export-mobile">
+          <i class="fa fa-share-square-o mr-2"></i> 导出成册
+        </button>
+      </div>
+    </div>
+  </header>
 
-// ---------- 功能 2：相册动态添加 ----------
-const uploadInput = document.getElementById("upload-photo");
-uploadInput.addEventListener("change", (e) => {
-  const file = e.target.files[0];
-  if (!file) return;
-  const reader = new FileReader();
-  reader.onload = function () {
-    const grid = document.getElementById("gallery-grid");
-    const div = document.createElement("div");
-    div.className = "gallery-item family";
-    div.innerHTML = `
-      <div class="relative overflow-hidden rounded-xl shadow-md group">
-        <img src="${reader.result}" alt="新照片" class="w-full h-80 object-cover transition-transform duration-700 group-hover:scale-110">
-        <div class="absolute inset-0 bg-black/60 opacity-0 group-hover:opacity-100 transition-opacity duration-300 flex items-center justify-center">
-          <div class="text-center p-4">
-            <h3 class="text-white text-xl font-bold mb-2">新照片</h3>
-            <p class="text-white/80 mb-4">用户上传</p>
+  <!-- 主内容区 -->
+  <main class="container mx-auto px-4 pt-20 pb-24">
+    <!-- 导入区域 -->
+    <section class="mb-10">
+      <div class="bg-white rounded-2xl shadow-md p-6 transition-all duration-300 hover:shadow-lg">
+        <div class="flex flex-col md:flex-row items-center justify-between">
+          <div class="mb-4 md:mb-0">
+            <h2 class="text-[clamp(1.5rem,3vw,2.5rem)] font-bold text-gray-800 mb-2">整理你的回忆</h2>
+            <p class="text-gray-600 max-w-xl">批量导入手机照片，按时间自动整理，轻松编辑成册，输出给淘宝商家印刷制作</p>
+          </div>
+          
+          <div class="w-full md:w-auto">
+            <label for="file-upload" class="flex items-center justify-center px-6 py-3 bg-primary text-white rounded-full hover:bg-primary/90 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5 cursor-pointer">
+              <i class="fa fa-upload mr-2"></i>
+              <span>导入照片</span>
+              <input type="file" id="file-upload" class="hidden" multiple accept="image/*">
+            </label>
           </div>
         </div>
-      </div>`;
-    grid.prepend(div);
-  };
-  reader.readAsDataURL(file);
-});
-
-// ---------- 功能 3：增强活动日历（点击添加） ----------
-document.getElementById("add-event").addEventListener("click", () => {
-  const title = prompt("请输入活动名称：");
-  if (!title) return;
-  const date = prompt("请输入日期（如6月30日）：");
-  if (!date) return;
-
-  const container = document.querySelector("#events .lg\:grid-cols-3 > div:last-child > .space-y-6");
-  const event = document.createElement("div");
-  event.className = "bg-white rounded-lg shadow-sm p-4 border-l-4 border-accent";
-  event.innerHTML = `
-    <div class="flex items-center mb-2">
-      <div class="bg-accent text-white rounded-full w-10 h-10 flex items-center justify-center mr-3">
-        <i class="fa fa-calendar"></i>
+        
+        <!-- 拖放区域 -->
+        <div class="mt-8 border-2 border-dashed border-gray-300 rounded-xl p-8 text-center transition-all duration-300 hover:border-primary" id="drop-area">
+          <i class="fa fa-cloud-upload text-5xl text-gray-400 mb-4"></i>
+          <h3 class="text-xl font-semibold text-gray-700 mb-2">或者拖放照片到这里</h3>
+          <p class="text-gray-500 mb-4">支持 JPG、PNG、WEBP 等常见格式</p>
+          <div class="flex flex-wrap justify-center gap-2" id="file-previews"></div>
+        </div>
       </div>
-      <div>
-        <h4 class="font-bold">${title}</h4>
-        <p class="text-sm text-gray-500">${date}</p>
+    </section>
+    
+    <!-- 相册/时间线视图切换 -->
+    <section class="mb-6">
+      <div class="flex justify-between items-center">
+        <div class="flex items-center space-x-1 bg-gray-100 rounded-full p-1">
+          <button class="px-4 py-2 rounded-full bg-white text-primary shadow-sm" id="view-timeline">时间线</button>
+          <button class="px-4 py-2 rounded-full text-gray-600 hover:text-gray-800 transition-colors duration-200" id="view-albums">相册</button>
+        </div>
+        
+        <div class="flex items-center space-x-3">
+          <div class="relative">
+            <input type="text" placeholder="搜索照片..." class="pl-10 pr-4 py-2 rounded-full border border-gray-300 focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200">
+            <i class="fa fa-search absolute left-4 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+          </div>
+          
+          <div class="flex items-center space-x-2">
+            <button class="p-2 text-gray-600 hover:text-primary rounded-full hover:bg-gray-100 transition-all duration-200" title="网格视图">
+              <i class="fa fa-th-large"></i>
+            </button>
+            <button class="p-2 text-gray-400 hover:text-primary rounded-full hover:bg-gray-100 transition-all duration-200" title="列表视图">
+              <i class="fa fa-list"></i>
+            </button>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- 时间线视图 -->
+    <section id="timeline-view" class="space-y-8">
+      <!-- 示例时间分组 - 今天 -->
+      <div class="time-group">
+        <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+          <i class="fa fa-calendar-check-o text-primary mr-2"></i>
+          今天
+          <span class="ml-2 text-sm font-normal text-gray-500">6张照片</span>
+        </h3>
+        
+        <div class="photo-grid">
+          <!-- 示例照片 -->
+          <div class="photo-item" data-id="1">
+            <img src="https://picsum.photos/seed/photo1/400/400" alt="示例照片1" class="w-full h-full object-cover">
+            <div class="select-icon">
+              <i class="fa fa-check"></i>
+            </div>
+          </div>
+          <div class="photo-item" data-id="2">
+            <img src="https://picsum.photos/seed/photo2/400/400" alt="示例照片2" class="w-full h-full object-cover">
+            <div class="select-icon">
+              <i class="fa fa-check"></i>
+            </div>
+          </div>
+          <div class="photo-item" data-id="3">
+            <img src="https://picsum.photos/seed/photo3/400/400" alt="示例照片3" class="w-full h-full object-cover">
+            <div class="select-icon">
+              <i class="fa fa-check"></i>
+            </div>
+          </div>
+          <div class="photo-item" data-id="4">
+            <img src="https://picsum.photos/seed/photo4/400/400" alt="示例照片4" class="w-full h-full object-cover">
+            <div class="select-icon">
+              <i class="fa fa-check"></i>
+            </div>
+          </div>
+          <div class="photo-item" data-id="5">
+            <img src="https://picsum.photos/seed/photo5/400/400" alt="示例照片5" class="w-full h-full object-cover">
+            <div class="select-icon">
+              <i class="fa fa-check"></i>
+            </div>
+          </div>
+          <div class="photo-item" data-id="6">
+            <img src="https://picsum.photos/seed/photo6/400/400" alt="示例照片6" class="w-full h-full object-cover">
+            <div class="select-icon">
+              <i class="fa fa-check"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 示例时间分组 - 昨天 -->
+      <div class="time-group">
+        <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+          <i class="fa fa-calendar-o text-primary mr-2"></i>
+          昨天
+          <span class="ml-2 text-sm font-normal text-gray-500">4张照片</span>
+        </h3>
+        
+        <div class="photo-grid">
+          <div class="photo-item" data-id="7">
+            <img src="https://picsum.photos/seed/photo7/400/400" alt="示例照片7" class="w-full h-full object-cover">
+            <div class="select-icon">
+              <i class="fa fa-check"></i>
+            </div>
+          </div>
+          <div class="photo-item" data-id="8">
+            <img src="https://picsum.photos/seed/photo8/400/400" alt="示例照片8" class="w-full h-full object-cover">
+            <div class="select-icon">
+              <i class="fa fa-check"></i>
+            </div>
+          </div>
+          <div class="photo-item" data-id="9">
+            <img src="https://picsum.photos/seed/photo9/400/400" alt="示例照片9" class="w-full h-full object-cover">
+            <div class="select-icon">
+              <i class="fa fa-check"></i>
+            </div>
+          </div>
+          <div class="photo-item" data-id="10">
+            <img src="https://picsum.photos/seed/photo10/400/400" alt="示例照片10" class="w-full h-full object-cover">
+            <div class="select-icon">
+              <i class="fa fa-check"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 示例时间分组 - 本周 -->
+      <div class="time-group">
+        <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+          <i class="fa fa-calendar text-primary mr-2"></i>
+          2025年6月20日
+          <span class="ml-2 text-sm font-normal text-gray-500">8张照片</span>
+        </h3>
+        
+        <div class="photo-grid">
+          <div class="photo-item" data-id="11">
+            <img src="https://picsum.photos/seed/photo11/400/400" alt="示例照片11" class="w-full h-full object-cover">
+            <div class="select-icon">
+              <i class="fa fa-check"></i>
+            </div>
+          </div>
+          <div class="photo-item" data-id="12">
+            <img src="https://picsum.photos/seed/photo12/400/400" alt="示例照片12" class="w-full h-full object-cover">
+            <div class="select-icon">
+              <i class="fa fa-check"></i>
+            </div>
+          </div>
+          <div class="photo-item" data-id="13">
+            <img src="https://picsum.photos/seed/photo13/400/400" alt="示例照片13" class="w-full h-full object-cover">
+            <div class="select-icon">
+              <i class="fa fa-check"></i>
+            </div>
+          </div>
+          <div class="photo-item" data-id="14">
+            <img src="https://picsum.photos/seed/photo14/400/400" alt="示例照片14" class="w-full h-full object-cover">
+            <div class="select-icon">
+              <i class="fa fa-check"></i>
+            </div>
+          </div>
+          <div class="photo-item" data-id="15">
+            <img src="https://picsum.photos/seed/photo15/400/400" alt="示例照片15" class="w-full h-full object-cover">
+            <div class="select-icon">
+              <i class="fa fa-check"></i>
+            </div>
+          </div>
+          <div class="photo-item" data-id="16">
+            <img src="https://picsum.photos/seed/photo16/400/400" alt="示例照片16" class="w-full h-full object-cover">
+            <div class="select-icon">
+              <i class="fa fa-check"></i>
+            </div>
+          </div>
+          <div class="photo-item" data-id="17">
+            <img src="https://picsum.photos/seed/photo17/400/400" alt="示例照片17" class="w-full h-full object-cover">
+            <div class="select-icon">
+              <i class="fa fa-check"></i>
+            </div>
+          </div>
+          <div class="photo-item" data-id="18">
+            <img src="https://picsum.photos/seed/photo18/400/400" alt="示例照片18" class="w-full h-full object-cover">
+            <div class="select-icon">
+              <i class="fa fa-check"></i>
+            </div>
+          </div>
+        </div>
+      </div>
+    </section>
+    
+    <!-- 相册视图 (默认隐藏) -->
+    <section id="albums-view" class="hidden space-y-8">
+      <!-- 示例相册 - 最近添加 -->
+      <div class="album-group">
+        <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+          <i class="fa fa-clock-o text-primary mr-2"></i>
+          最近添加
+          <span class="ml-2 text-sm font-normal text-gray-500">18张照片</span>
+        </h3>
+        
+        <div class="photo-grid">
+          <!-- 相册预览照片 -->
+          <div class="photo-item" data-id="1">
+            <img src="https://picsum.photos/seed/photo1/400/400" alt="示例照片1" class="w-full h-full object-cover">
+          </div>
+          <div class="photo-item" data-id="2">
+            <img src="https://picsum.photos/seed/photo2/400/400" alt="示例照片2" class="w-full h-full object-cover">
+          </div>
+          <div class="photo-item" data-id="3">
+            <img src="https://picsum.photos/seed/photo3/400/400" alt="示例照片3" class="w-full h-full object-cover">
+          </div>
+          <div class="photo-item" data-id="4">
+            <img src="https://picsum.photos/seed/photo4/400/400" alt="示例照片4" class="w-full h-full object-cover">
+          </div>
+          <div class="photo-item" data-id="5">
+            <img src="https://picsum.photos/seed/photo5/400/400" alt="示例照片5" class="w-full h-full object-cover">
+          </div>
+          <div class="photo-item" data-id="6">
+            <img src="https://picsum.photos/seed/photo6/400/400" alt="示例照片6" class="w-full h-full object-cover">
+          </div>
+        </div>
+      </div>
+      
+      <!-- 示例相册 - 自动创建 -->
+      <div class="album-group">
+        <h3 class="text-xl font-semibold text-gray-800 mb-4 flex items-center">
+          <i class="fa fa-folder text-primary mr-2"></i>
+          自动创建的相册
+        </h3>
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          <!-- 自动创建的相册 -->
+          <div class="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
+            <div class="h-48 relative">
+              <img src="https://picsum.photos/seed/travel/600/400" alt="旅行相册封面" class="w-full h-full object-cover">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end">
+                <div class="p-4">
+                  <h4 class="text-white font-semibold text-lg">旅行回忆</h4>
+                  <p class="text-white/80 text-sm">2025年6月</p>
+                </div>
+              </div>
+            </div>
+            <div class="p-4">
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600 text-sm">12张照片</span>
+                <button class="text-primary hover:text-primary/80 transition-colors duration-200">
+                  <i class="fa fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
+            <div class="h-48 relative">
+              <img src="https://picsum.photos/seed/family/600/400" alt="家庭相册封面" class="w-full h-full object-cover">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end">
+                <div class="p-4">
+                  <h4 class="text-white font-semibold text-lg">家庭聚会</h4>
+                  <p class="text-white/80 text-sm">2025年5月</p>
+                </div>
+              </div>
+            </div>
+            <div class="p-4">
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600 text-sm">24张照片</span>
+                <button class="text-primary hover:text-primary/80 transition-colors duration-200">
+                  <i class="fa fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+          
+          <div class="bg-white rounded-xl shadow-md overflow-hidden transition-all duration-300 hover:shadow-lg transform hover:-translate-y-1">
+            <div class="h-48 relative">
+              <img src="https://picsum.photos/seed/food/600/400" alt="美食相册封面" class="w-full h-full object-cover">
+              <div class="absolute inset-0 bg-gradient-to-t from-black/70 to-transparent flex items-end">
+                <div class="p-4">
+                  <h4 class="text-white font-semibold text-lg">美食日记</h4>
+                  <p class="text-white/80 text-sm">2025年6月</p>
+                </div>
+              </div>
+            </div>
+            <div class="p-4">
+              <div class="flex justify-between items-center">
+                <span class="text-gray-600 text-sm">18张照片</span>
+                <button class="text-primary hover:text-primary/80 transition-colors duration-200">
+                  <i class="fa fa-chevron-right"></i>
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- 创建新相册 -->
+      <div class="album-group">
+        <div class="bg-white rounded-xl border-2 border-dashed border-gray-300 p-6 text-center cursor-pointer transition-all duration-300 hover:border-primary hover:bg-primary/5">
+          <div class="flex flex-col items-center justify-center">
+            <i class="fa fa-plus-circle text-4xl text-gray-400 mb-3"></i>
+            <h4 class="text-lg font-medium text-gray-700 mb-1">创建新相册</h4>
+            <p class="text-gray-500 text-sm">手动整理照片到新相册</p>
+          </div>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <!-- 底部工具栏 -->
+  <footer class="fixed bottom-0 left-0 right-0 bg-white shadow-lg z-40 transition-all duration-300">
+    <div class="container mx-auto px-4 py-3 flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <button class="p-2 text-gray-600 hover:text-primary rounded-full hover:bg-gray-100 transition-all duration-200" title="全选">
+          <i class="fa fa-check-square-o"></i>
+        </button>
+        <button class="p-2 text-gray-600 hover:text-primary rounded-full hover:bg-gray-100 transition-all duration-200" title="删除选中">
+          <i class="fa fa-trash-o"></i>
+        </button>
+        <button class="p-2 text-gray-600 hover:text-primary rounded-full hover:bg-gray-100 transition-all duration-200" title="移动到相册">
+          <i class="fa fa-folder-o"></i>
+        </button>
+        <button class="p-2 text-gray-600 hover:text-primary rounded-full hover:bg-gray-100 transition-all duration-200" title="编辑">
+          <i class="fa fa-pencil"></i>
+        </button>
+      </div>
+      
+      <div class="flex items-center space-x-2">
+        <span class="text-sm text-gray-600">已选择 <span class="font-semibold text-primary">18</span> 张照片</span>
+        <button class="px-6 py-2 bg-primary text-white rounded-full hover:bg-primary/90 transition-all duration-200 shadow-md hover:shadow-lg transform hover:-translate-y-0.5">
+          <i class="fa fa-book mr-2"></i> 创建相册
+        </button>
       </div>
     </div>
-    <p class="text-gray-700 text-sm">由用户添加</p>`;
-  container.prepend(event);
-});
+  </footer>
 
-// ---------- 功能 4：移动端优化手势支持 ----------
-const photoModalMobile = document.getElementById("photo-modal");
-let touchStartX = 0;
-photoModalMobile.addEventListener("touchstart", e => {
-  touchStartX = e.changedTouches[0].clientX;
-});
-photoModalMobile.addEventListener("touchend", e => {
-  const deltaX = e.changedTouches[0].clientX - touchStartX;
-  if (Math.abs(deltaX) > 50) {
-    photoModalMobile.classList.add("opacity-0", "invisible");
-    document.body.style.overflow = "auto";
-  }
-});
-</script>
+  <!-- 导出模态框 -->
+  <div class="fixed inset-0 bg-black/50 backdrop-blur-sm z-50 flex items-center justify-center opacity-0 pointer-events-none transition-opacity duration-300" id="export-modal">
+    <div class="bg-white rounded-2xl shadow-xl max-w-2xl w-full max-h-[90vh] overflow-auto transform scale-95 transition-transform duration-300" id="modal-content">
+      <div class="p-6 border-b border-gray-200">
+        <div class="flex justify-between items-center">
+          <h3 class="text-xl font-bold text-gray-800">导出相册</h3>
+          <button class="text-gray-400 hover:text-gray-600 transition-colors duration-200" id="close-modal">
+            <i class="fa fa-times text-xl"></i>
+          </button>
+        </div>
+      </div>
+      
+      <div class="p-6">
+        <div class="mb-6">
+          <h4 class="text-lg font-semibold text-gray-800 mb-3">选择模板</h4>
+          <div class="grid grid-cols-2 md:grid-cols-3 gap-4">
+            <div class="border-2 border-primary rounded-lg overflow-hidden relative cursor-pointer group">
+              <img src="https://picsum.photos/seed/template1/300/400" alt="简约模板" class="w-full h-40 object-cover">
+              <div class="absolute inset-0 bg-primary/20 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-200">
+                <i class="fa fa-check-circle text-white text-3xl"></i>
+              </div>
+              <div class="p-2 text-center">
+                <p class="text-sm font-medium">简约模板</p>
+              </div>
+            </div>
+            <div class="border-2 border-gray-200 rounded-lg overflow-hidden cursor-pointer hover:border-primary/50 transition-colors duration-200">
+              <img src="https://picsum.photos/seed/template2/300/400" alt="文艺模板" class="w-full h-40 object-cover">
+              <div class="p-2 text-center">
+                <p class="text-sm font-medium">文艺模板</p>
+              </div>
+            </div>
+            <div class="border-2 border-gray-200 rounded-lg overflow-hidden cursor-pointer hover:border-primary/50 transition-colors duration-200">
+              <img src="https://picsum.photos/seed/template3/300/400" alt="时尚模板" class="w-full h-40 object-cover">
+              <div class="p-2 text-center">
+                <p class="text-sm font-medium">时尚模板</p>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mb-6">
+          <h4 class="text-lg font-semibold text-gray-800 mb-3">相册信息</h4>
+          <div class="space-y-4">
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">相册名称</label>
+              <input type="text" value="2025年6月照片集" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200">
+            </div>
+            <div>
+              <label class="block text-sm font-medium text-gray-700 mb-1">相册描述</label>
+              <textarea rows="3" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200">这是一组我在2025年6月拍摄的照片，记录了这个月的美好时光。</textarea>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">照片数量</label>
+                <input type="number" value="18" min="1" class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200">
+              </div>
+              <div>
+                <label class="block text-sm font-medium text-gray-700 mb-1">页面布局</label>
+                <select class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/30 focus:border-primary transition-all duration-200">
+                  <option>2张/页</option>
+                  <option>4张/页</option>
+                  <option>6张/页</option>
+                  <option>混合布局</option>
+                </select>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="mb-6">
+          <h4 class="text-lg font-semibold text-gray-800 mb-3">导出选项</h4>
+          <div class="space-y-3">
+            <div class="flex items-center">
+              <input type="checkbox" id="option-1" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded" checked>
+              <label for="option-1" class="ml-2 block text-sm text-gray-700">添加页码</label>
+            </div>
+            <div class="flex items-center">
+              <input type="checkbox" id="option-2" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded" checked>
+              <label for="option-2" class="ml-2 block text-sm text-gray-700">添加日期水印</label>
+            </div>
+            <div class="flex items-center">
+              <input type="checkbox" id="option-3" class="h-4 w-4 text-primary focus:ring-primary border-gray-300 rounded">
+              <label for="option-3" class="ml-2 block text-sm text-gray-700">添加封面页</label>
+            </div>
+          </div>
+        </div>
+        
+        <div class="border-t border-gray-200 pt-6">
+          <div class="flex justify-end space-x-3">
+            <button class="px-5 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors duration-200" id="cancel-export">取消</button>
+            <button class="px-5 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-all duration-200 shadow-md hover:shadow-lg">
+              <i class="fa fa-download mr-2"></i> 导出相册
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- JavaScript -->
+  <script>
+    document.addEventListener('DOMContentLoaded', function() {
+      // 导航菜单切换
+      const btnMenu = document.getElementById('btn-menu');
+      const mobileMenu = document.getElementById('mobile-menu');
+      
+      btnMenu.addEventListener('click', function() {
+        if (mobileMenu.classList.contains('opacity-0')) {
+          mobileMenu.classList.remove('opacity-0', '-translate-y-full', 'pointer-events-none');
+          mobileMenu.classList.add('opacity-100', 'translate-y-0', 'pointer-events-auto');
+        } else {
+          mobileMenu.classList.add('opacity-0', '-translate-y-full', 'pointer-events-none');
+          mobileMenu.classList.remove('opacity-100', 'translate-y-0', 'pointer-events-auto');
+        }
+      });
+      
+      // 视图切换
+      const viewTimeline = document.getElementById('view-timeline');
+      const viewAlbums = document.getElementById('view-albums');
+      const timelineView = document.getElementById('timeline-view');
+      const albumsView = document.getElementById('albums-view');
+      
+      viewTimeline.addEventListener('click', function() {
+        timelineView.classList.remove('hidden');
+        albumsView.classList.add('hidden');
+        viewTimeline.classList.add('bg-white', 'text-primary', 'shadow-sm');
+        viewTimeline.classList.remove('text-gray-600', 'hover:text-gray-800');
+        viewAlbums.classList.remove('bg-white', 'text-primary', 'shadow-sm');
+        viewAlbums.classList.add('text-gray-600', 'hover:text-gray-800');
+      });
+      
+      viewAlbums.addEventListener('click', function() {
+        timelineView.classList.add('hidden');
+        albumsView.classList.remove('hidden');
+        viewAlbums.classList.add('bg-white', 'text-primary', 'shadow-sm');
+        viewAlbums.classList.remove('text-gray-600', 'hover:text-gray-800');
+        viewTimeline.classList.remove('bg-white', 'text-primary', 'shadow-sm');
+        viewTimeline.classList.add('text-gray-600', 'hover:text-gray-800');
+      });
+      
+      // 照片选择功能
+      const photoItems = document.querySelectorAll('.photo-item');
+      
+      photoItems.forEach(item => {
+        item.addEventListener('click', function() {
+          this.classList.toggle('photo-selected');
+        });
+      });
+      
+      // 导出模态框
+      const exportModal = document.getElementById('export-modal');
+      const modalContent = document.getElementById('modal-content');
+      const btnExport = document.getElementById('btn-export');
+      const btnExportMobile = document.getElementById('btn-export-mobile');
+      const closeModal = document.getElementById('close-modal');
+      const cancelExport = document.getElementById('cancel-export');
+      
+      function openModal() {
+        exportModal.classList.remove('opacity-0', 'pointer-events-none');
+        modalContent.classList.remove('scale-95');
+        modalContent.classList.add('scale-100');
+        document.body.style.overflow = 'hidden';
+      }
+      
+      function closeModalFunc() {
+        exportModal.classList.add('opacity-0', 'pointer-events-none');
+        modalContent.classList.remove('scale-100');
+        modalContent.classList.add('scale-95');
+        document.body.style.overflow = '';
+      }
+      
+      btnExport.addEventListener('click', openModal);
+      btnExportMobile.addEventListener('click', openModal);
+      closeModal.addEventListener('click', closeModalFunc);
+      cancelExport.addEventListener('click', closeModalFunc);
+      
+      // 点击模态框外部关闭
+      exportModal.addEventListener('click', function(e) {
+        if (e.target === exportModal) {
+          closeModalFunc();
+        }
+      });
+      
+      // 文件上传功能
+      const fileUpload = document.getElementById('file-upload');
+      const dropArea = document.getElementById('drop-area');
+      const filePreviews = document.getElementById('file-previews');
+      
+      // 拖放事件
+      ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, preventDefaults, false);
+      });
+      
+      function preventDefaults(e) {
+        e.preventDefault();
+        e.stopPropagation();
+      }
+      
+      ['dragenter', 'dragover'].forEach(eventName => {
+        dropArea.addEventListener(eventName, highlight, false);
+      });
+      
+      ['dragleave', 'drop'].forEach(eventName => {
+        dropArea.addEventListener(eventName, unhighlight, false);
+      });
+      
+      function highlight() {
+        dropArea.classList.add('border-primary', 'bg-primary/5');
+      }
+      
+      function unhighlight() {
+        dropArea.classList.remove('border-primary', 'bg-primary/5');
+      }
+      
+      dropArea.addEventListener('drop', handleDrop, false);
+      
+      function handleDrop(e) {
+        const dt = e.dataTransfer;
+        const files = dt.files;
+        handleFiles(files);
+      }
+      
+      fileUpload.addEventListener('change', function() {
+        handleFiles(this.files);
+      });
+      
+      function handleFiles(files) {
+        // 显示文件预览
+        Array.from(files).forEach(file => {
+          if (!file.type.match('image.*')) {
+            return;
+          }
+          
+          const reader = new FileReader();
+          
+          reader.onload = function(e) {
+            const preview = document.createElement('div');
+            preview.className = 'relative w-24 h-24 rounded-lg overflow-hidden mr-2 mb-2';
+            
+            const img = document.createElement('img');
+            img.src = e.target.result;
+            img.className = 'w-full h-full object-cover';
+            img.alt = file.name;
+            
+            const removeBtn = document.createElement('button');
+            removeBtn.className = 'absolute top-1 right-1 bg-black/50 text-white rounded-full w-5 h-5 flex items-center justify-center opacity-0 hover:opacity-100 transition-opacity duration-200';
+            removeBtn.innerHTML = '<i class="fa fa-times text-xs"></i>';
+            removeBtn.onclick = function() {
+              preview.remove();
+            };
+            
+            preview.appendChild(img);
+            preview.appendChild(removeBtn);
+            filePreviews.appendChild(preview);
+          };
+          
+          reader.readAsDataURL(file);
+        });
+      }
+      
+      // 滚动时导航栏效果
+      const header = document.getElementById('main-header');
+      let lastScrollTop = 0;
+      
+      window.addEventListener('scroll', function() {
+        const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+        
+        if (scrollTop > 50) {
+          header.classList.add('py-2', 'shadow');
+          header.classList.remove('py-3');
+        } else {
+          header.classList.remove('py-2', 'shadow');
+          header.classList.add('py-3');
+        }
+        
+        lastScrollTop = scrollTop;
+      });
+    });
+  </script>
 </body>
 </html>
+    
